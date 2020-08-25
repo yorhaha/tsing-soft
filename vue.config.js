@@ -4,7 +4,10 @@ module.exports = {
       "/api": {
         "target": "http://simplebbs.iterator-traits.com",
         "ws": true,
-        "changeOrigin": true
+        "changeOrigin": true,
+        "pathRewrite": {
+          "^/api": ""
+        }
       }
     }
   },

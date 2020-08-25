@@ -4,8 +4,12 @@ import axios from 'axios'
 import vuetify from './plugins/vuetify';
 import router from './router.js'
 
+import navbar from './components/navbar.vue'
+
 Vue.config.productionTip = false
 Vue.prototype.$axios = axios
+
+Vue.use(navbar)
 
 new Vue({
   vuetify,

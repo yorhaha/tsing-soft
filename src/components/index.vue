@@ -33,12 +33,8 @@
               </v-card-text>
               <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-spacer></v-spacer>
-                <v-btn color="primary" @click="login">登录</v-btn>
-                <v-spacer></v-spacer>
-                <v-btn color="primary" @click="testApi">测试</v-btn>
+                <v-btn color="primary" @click.stop="login" id="login-button">登录</v-btn>
               </v-card-actions>
-              <v-alert type="success">{{ testResult }}</v-alert>
             </v-card>
           </v-col>
         </v-row>
@@ -53,67 +49,81 @@
 </template>
 
 <script>
-  import navbar from "./navbar"
+  import navbar from "./navbar.vue"
+  import Vue from 'vue'
   export default {
-    props: {
-      source: String,
-      info: {},
+    mounted() {
     },
     components: {
       navbar
     },
     data() {
       return {
-        testResult: "",
         submitResult: "",
         username: "",
         password: "",
         wrongPassword: false,
         status: 0,
-        jwt: ""
       }
     },
     methods: {
-      testApi() {
-        this.$axios({
-          method: "get",
-          url: "/api/v1/hello"
-        }).then(response => (this.testResult = response.data))
-      },
       login() {
         this.$axios({
           method: "patch",
-          url: "/api/v1/login",
+          url: "http://simplebbs.iterator-traits.com/api/v1/login",
           data: JSON.stringify({
             "username": this.username,
             "password": this.password
           })
-        }).then(response => (
+        }).then(response => {
           this.submitResult = response.data,
           this.status = response.status
-        ))
-        if (this.status === 200) {
-          this.jwt = this.submitResult.jwt
-          this.userinfo = {
-            "nickname": this.submitResult.nickname,
-            "userId": this.submitResult.userId,
-            "username": this.submitResult.username
-          }
-          this.wrongPassword = false
-          console.log("Login succeed!")
-          this.$router.push({
-            name: "posts",
-            params: {
-              "jwt": this.jwt,
-              "userinfo": this.userinfo
-            }
-          })
-        }
-        else {
-          this.wrongPassword = true
-        }
-        console.log(this.submitResult)
+          console.log("status:", this.status)
 
+          if (this.status === 200) {
+            Vue.prototype.$jwt = this.submitResult.jwt
+            this.wrongPassword = false
+            console.log("Login succeed!")
+
+            // Get user info for 'posts.vue'
+            this.$axios({
+                method: "get",
+                url: "http://simplebbs.iterator-traits.com/api/v1/user",
+                headers: {
+                    "Authorization": this.$jwt
+                }
+            }).then(response => {
+                console.log(response)
+                Vue.prototype.$userinfo = response.data
+            }).catch(error => console.log(error))
+
+            // Get posts for 'posts.vue'
+            this.$axios({
+                method: "get",
+                url: "http://simplebbs.iterator-traits.com/api/v1/post",
+                headers: {
+                    "Authorization": this.$jwt
+                },
+                params: {
+                  "page": 1,
+                  "size": 10,
+                  "userId": "", 
+                  "orderByReply": false
+                }
+            }).then(response => {
+                console.log("RECEIVE!")
+                Vue.prototype.$postlist = response.data.posts
+                console.log(this.$postlist)
+                this.$router.push({
+                  name: "posts"
+                })
+            }).catch(error => console.log(error))
+          }
+          else {
+            this.wrongPassword = true
+            console.log("Login failed!", this.status)
+          }
+        }).catch(error => console.log(error))
       }
     }
   }

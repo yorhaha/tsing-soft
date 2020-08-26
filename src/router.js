@@ -10,6 +10,7 @@ Vue.use(VueRouter)
 
 import index from './components/index';
 import posts from './components/posts';
+import write from './components/write';
 
 const routes = [
     {
@@ -21,6 +22,11 @@ const routes = [
         path: "/posts",
         name: "posts",
         component: posts
+    },
+    {
+        path: "/write",
+        name: "write",
+        component: write
     },
     {
         path: "/",

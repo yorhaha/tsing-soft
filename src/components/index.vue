@@ -33,6 +33,7 @@
               </v-card-text>
               <v-card-actions>
                 <v-spacer></v-spacer>
+                <v-checkbox v-model="autologin" label="下次自动登录" class="mr-4"></v-checkbox>
                 <v-btn color="primary" @click.stop="login" id="login-button">登录</v-btn>
               </v-card-actions>
             </v-card>
@@ -52,7 +53,15 @@
   import navbar from "./navbar.vue"
   import Vue from 'vue'
   export default {
-    mounted() {
+    created() {
+      Vue.prototype.$logged = false
+      let storage = JSON.parse(localStorage.getItem('localstorage'))
+      if (storage != null) {
+        console.log("LocalStorage: ", storage)
+        Vue.prototype.$jwt = storage.jwt
+        this.loginsucceed()
+      }
+      console.log("LocalStorage clean")
     },
     components: {
       navbar
@@ -64,6 +73,7 @@
         password: "",
         wrongPassword: false,
         status: 0,
+        autologin: true
       }
     },
     methods: {
@@ -78,24 +88,40 @@
         }).then(response => {
           this.submitResult = response.data,
           this.status = response.status
-          console.log("status:", this.status)
 
           if (this.status === 200) {
             Vue.prototype.$jwt = this.submitResult.jwt
             this.wrongPassword = false
-            console.log("Login succeed!")
 
-            // Get user info for 'posts.vue'
-            this.$axios({
-                method: "get",
-                url: "http://simplebbs.iterator-traits.com/api/v1/user",
-                headers: {
-                    "Authorization": this.$jwt
-                }
-            }).then(response => {
-                console.log(response)
-                Vue.prototype.$userinfo = response.data
-            }).catch(error => console.log(error))
+            localStorage.clear();
+            if (this.autologin === true) {
+              localStorage.setItem("localstorage", JSON.stringify({
+                "jwt": this.$jwt,
+              }));
+            }
+
+            console.log("Login succeed!")
+            this.loginsucceed()
+          }
+          else {
+            this.wrongPassword = true
+            console.log("Login failed!", this.status)
+          }
+        }).catch(error => console.log(error))
+      },
+      loginsucceed() {
+        Vue.prototype.$logged = true
+        // Get user info for 'posts.vue'
+        this.$axios({
+            method: "get",
+            url: "http://simplebbs.iterator-traits.com/api/v1/user",
+            headers: {
+                "Authorization": this.$jwt
+            }
+        }).then(response => {
+            console.log(response)
+            Vue.prototype.$userinfo = response.data
+            console.log("Get user info")
 
             // Get posts for 'posts.vue'
             this.$axios({
@@ -111,18 +137,14 @@
                   "orderByReply": false
                 }
             }).then(response => {
-                console.log("RECEIVE!")
                 Vue.prototype.$postlist = response.data.posts
-                console.log(this.$postlist)
+                
+                console.log("Get posts")
+
                 this.$router.push({
                   name: "posts"
                 })
             }).catch(error => console.log(error))
-          }
-          else {
-            this.wrongPassword = true
-            console.log("Login failed!", this.status)
-          }
         }).catch(error => console.log(error))
       }
     }

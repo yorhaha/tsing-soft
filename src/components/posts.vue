@@ -13,11 +13,11 @@
             </v-list-item>
         </v-card>
         <v-card class="pa-md-4 mx-lg-auto" max-width="344" outlined>
-          <v-list-item link @click="refreshposts">
+          <v-list-item link @click="getallposts">
             <v-list-item-action><v-icon>mdi-forum</v-icon></v-list-item-action>
             <v-list-item-content><v-list-item-title>最新帖子</v-list-item-title></v-list-item-content>
           </v-list-item>
-          <v-list-item link>
+          <v-list-item link @click="gotowrite">
             <v-list-item-action><v-icon>mdi-pen</v-icon></v-list-item-action>
             <v-list-item-content><v-list-item-title>发布帖子</v-list-item-title></v-list-item-content>
           </v-list-item>
@@ -46,7 +46,11 @@
                   <div v-show="post.showcontent">
                     <v-divider></v-divider>
                     <v-card-text>
-                      {{ post.content }}
+                      <div class="markdown-body">
+                        <VueMarkdown :source="post.content"></VueMarkdown>
+                      </div>
+                      <!-- <span v-html="post.content"></span> -->
+                      <!-- {{ post.content }} -->
                     </v-card-text>
                   </div>
                 </v-expand-transition>
@@ -73,12 +77,20 @@
 <script>
 import navbar from "./navbar.vue"
 import Vue from 'vue'
+import VueMarkdown from 'vue-markdown'
 export default {
     components: {
-        navbar
+        navbar,
+        VueMarkdown
     },
     created() {
         console.log("posts page")
+        if (this.$logged === false || this.$logged === undefined) {
+          this.$router.push({
+            name: "index"
+          })
+        }
+
         for (let i = 0; i < this.$postlist.length; i++) {
           this.$set(this.$postlist[i], "showcontent", false)
         }
@@ -89,51 +101,37 @@ export default {
           drawer: null,
           allposts: [],
           page: 1,
-          orderByReply: false
+          orderByReply: false,
+          customuserid: 0
         }
     },
     methods: {
       changeshow(thepost, postindex) {
         Vue.set(this.allposts[postindex], "showcontent", !(thepost.showcontent))
       },
+      gotowrite() {
+        console.log("gotowrite")
+        this.$router.push({
+          name: "write"
+        })
+      },
       getmoreposts() {
         this.page += 1
-        this.$axios({
-                method: "get",
-                url: "http://simplebbs.iterator-traits.com/api/v1/post",
-                headers: {
-                    "Authorization": this.$jwt
-                },
-                params: {
-                  "page": this.page,
-                  "size": 10,
-                  "userId": "", 
-                  "orderByReply": this.orderByReply
-                }
-            }).then(response => {
-              this.allposts = this.allposts.concat(response.data.posts)
-            }).catch(error => console.log(error))
+        this.getnewposts(this.page, this.customuserid, true)
       },
-      refreshposts() {
-        this.allposts = []
-        this.$axios({
-                method: "get",
-                url: "http://simplebbs.iterator-traits.com/api/v1/post",
-                headers: {
-                    "Authorization": this.$jwt
-                },
-                params: {
-                  "page": 1,
-                  "size": 10,
-                  "userId": "", 
-                  "orderByReply": this.orderByReply
-                }
-            }).then(response => {
-              this.allposts = response.data.posts
-            }).catch(error => console.log(error))
+      getallposts() {
+        this.customuserid = 0
+        this.getnewposts(1, 0, false)
+      },
+      getuserposts(userid) {
+        this.customuserid = userid
+        this.getnewposts(1, userid, false)
       },
       getmyposts() {
-        this.allposts = []
+        this.customuserid = this.$userinfo.id
+        this.getnewposts(1, this.$userinfo.id, false)
+      },
+      getnewposts(newpage=1, newuserid=0, more=false) {
         this.$axios({
                 method: "get",
                 url: "http://simplebbs.iterator-traits.com/api/v1/post",
@@ -141,13 +139,20 @@ export default {
                     "Authorization": this.$jwt
                 },
                 params: {
-                  "page": 1,
+                  "page": newpage,
                   "size": 10,
-                  "userId": this.$userinfo.id, 
+                  "userId": newuserid, 
                   "orderByReply": this.orderByReply
                 }
             }).then(response => {
-              this.allposts = response.data.posts
+              if (more === true) {
+                this.allposts = this.allposts.concat(response.data.posts)
+              }
+              else {
+                this.page = 1
+                this.allposts = response.data.posts
+              }
+              
             }).catch(error => console.log(error))
       }
     }

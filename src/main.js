@@ -5,6 +5,7 @@ import vuetify from './plugins/vuetify';
 import router from './router.js'
 
 import navbar from './components/navbar.vue'
+import 'github-markdown-css/github-markdown.css'
 
 Vue.config.productionTip = false
 Vue.prototype.$axios = axios

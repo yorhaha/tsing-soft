@@ -4,7 +4,7 @@
     <v-main>
         <v-card class="mx-auto" max-width="800">
             <v-card-title class="mt-2">
-                <span class="text-h5">{{thispost.title}}</span>
+                <span class="mx-3 text-h5">{{thispost.title}}</span>
             </v-card-title>
             <v-card-subtitle>
                 <span class="mx-3">{{thispost.nickname}}</span>
@@ -45,7 +45,6 @@
                             <v-btn class="mx-6" @click="replyareply(reply)">评论</v-btn>
                         </v-row>
                     </div>
-                    <!-- <span class="body-1 mx-1">{{reply.content}}</span> -->
                 </v-list-item-content>
             </v-list-item>
         </v-card>

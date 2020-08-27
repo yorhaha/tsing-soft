@@ -45,6 +45,7 @@
           密码错误！
         </v-alert>
       </v-container>
+      
     </v-main>
   </v-app>
 </template>
@@ -53,12 +54,13 @@
   import navbar from "./navbar.vue"
   import Vue from 'vue'
   export default {
-    created() {
+    beforeMount() {
       Vue.prototype.$logged = false
       let jwtStorage = JSON.parse(localStorage.getItem('jwt'))
       if (jwtStorage != null) {
         console.log("LocalStorage: ", jwtStorage)
         Vue.prototype.$jwt = jwtStorage.jwt
+        this.autologinsucceed = true
         this.loginsucceed()
       }
       else{
@@ -75,7 +77,8 @@
         password: "",
         wrongPassword: false,
         status: 0,
-        autologin: true
+        autologin: true,
+        autologinsucceed: false
       }
     },
     methods: {
@@ -144,7 +147,10 @@
                 console.log("Get posts")
 
                 this.$router.push({
-                  name: "posts"
+                  name: "posts",
+                  params: {
+                    "autologinsucceed": this.autologinsucceed
+                  }
                 })
             }).catch(error => console.log(error))
         }).catch(error => console.log(error))

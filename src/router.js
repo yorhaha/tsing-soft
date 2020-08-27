@@ -12,6 +12,7 @@ import index from './components/index';
 import posts from './components/posts';
 import write from './components/write';
 import comment from './components/comment';
+import about from './components/about';
 
 const routes = [
     {
@@ -33,6 +34,11 @@ const routes = [
         path: "/comment",
         name: "comment",
         component: comment
+    },
+    {
+        path: "/about",
+        name: "about",
+        component: about
     },
     {
         path: "/",

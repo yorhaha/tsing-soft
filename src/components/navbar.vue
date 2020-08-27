@@ -1,16 +1,17 @@
 <template>
     <v-app-bar app clipped-left color="primary" dense dark>
-      <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-icon class="mx-4" large>
-        mdi-youtube
-      </v-icon>
+      <v-btn class="ml-4" icon>
+        <v-icon large>
+          mdi-code-greater-than
+        </v-icon>
+      </v-btn>
       <v-toolbar-title class="mr-12 align-center" @click.stop="gotoindex">
-        <span class="title">清软论坛</span>
+        <v-btn text class="title">清软论坛</v-btn>
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
 
-      <v-btn icon><v-icon>mdi-alert-circle-outline</v-icon></v-btn>
+      <v-btn icon href="/about"><v-icon>mdi-alert-circle-outline</v-icon></v-btn>
       <v-btn icon v-show="showexitbutton" class="mx-2" @click.stop="exitdialog = true">
         <v-icon>mdi-logout-variant</v-icon>
       </v-btn>
@@ -41,7 +42,6 @@ export default {
     name: "navbar",
     data() {
         return {
-          // showexitbutton: Vue.prototype.$logged,
           exitdialog: false,
         }
     },

@@ -34,11 +34,14 @@
       <v-container class="fill-height">
         <v-row>
           <v-col class="grow">
+            <span class="mx-3 text-h6">{{ this.customearea }}的帖子</span>
             <v-container v-for="(post, index) in allposts" :key="index">
               <v-card color="white">
                 <v-card-title class="headline">{{ post.title }}</v-card-title>
                 <v-card-subtitle>
-                  <span class="mr-3" link>{{post.nickname}}</span>
+                  <a @click="getuserposts(post.userId, post.nickname)">
+                    <span class="mr-3 text--grey">{{ post.nickname }}</span>
+                  </a>
                   <span class="mr-3">{{formatDate(post.created)}}</span>
                   <span class="mr-3" v-show="post.created != post.updated">已编辑</span>
                 </v-card-subtitle>
@@ -55,8 +58,6 @@
                       <div class="markdown-body">
                         <VueMarkdown :source="post.content"></VueMarkdown>
                       </div>
-                      <!-- <span v-html="post.content"></span> -->
-                      <!-- {{ post.content }} -->
                     </v-card-text>
                   </div>
                 </v-expand-transition>
@@ -76,6 +77,11 @@
           </v-col>
         </v-row>
       </v-container>
+
+      <v-snackbar v-model="this.$route.params.autologinsucceed">
+        自动登录成功
+      </v-snackbar>
+
     </v-main>
   </v-app>
 </template>
@@ -125,9 +131,6 @@ export default {
         if (this.$jwt === undefined) {
           this.$logged = false
           console.log("logged === false")
-          // this.$router.push({
-          //   name: "index"
-          // })
         }
         else {
           this.$logged = true
@@ -139,7 +142,8 @@ export default {
           allposts: [],
           page: 1,
           orderByReply: false,
-          customuserid: 0
+          customuserid: 0,
+          customearea: "广场"
         }
     },
     methods: {
@@ -157,14 +161,17 @@ export default {
         this.getnewposts(this.page, this.customuserid, true)
       },
       getallposts() {
+        this.customearea = "广场"
         this.customuserid = 0
         this.getnewposts(1, 0, false)
       },
-      getuserposts(userid) {
+      getuserposts(userid, nickname) {
+        this.customearea = nickname
         this.customuserid = userid
         this.getnewposts(1, userid, false)
       },
       getmyposts() {
+        this.customearea = "我"
         this.customuserid = this.$userinfo.id
         this.getnewposts(1, this.$userinfo.id, false)
       },
@@ -216,8 +223,3 @@ export default {
     }
 }
 </script>
-<!--
-
-            <h1>This is posts.vue</h1>
-            <h1>{{this.$route.params.jwt}}</h1>
--->

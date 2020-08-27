@@ -41,9 +41,14 @@ export default {
     name: "navbar",
     data() {
         return {
-          showexitbutton: Vue.prototype.$logged,
+          // showexitbutton: Vue.prototype.$logged,
           exitdialog: false,
         }
+    },
+    computed: {
+      showexitbutton: function() {
+        return Vue.prototype.$logged
+      }
     },
     methods: {
       logout() {

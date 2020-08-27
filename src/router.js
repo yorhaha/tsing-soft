@@ -11,6 +11,7 @@ Vue.use(VueRouter)
 import index from './components/index';
 import posts from './components/posts';
 import write from './components/write';
+import comment from './components/comment';
 
 const routes = [
     {
@@ -27,6 +28,11 @@ const routes = [
         path: "/write",
         name: "write",
         component: write
+    },
+    {
+        path: "/comment",
+        name: "comment",
+        component: comment
     },
     {
         path: "/",

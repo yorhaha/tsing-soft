@@ -17,7 +17,8 @@
     "vue": "^2.6.11",
     "vue-markdown": "^2.2.4",
     "vue-router": "^3.4.3",
-    "vuetify": "^2.3.9"
+    "vuetify": "^2.3.9",
+    "vuex": "^3.5.1"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",

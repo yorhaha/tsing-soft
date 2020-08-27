@@ -11,7 +11,7 @@
             <v-chip class="mb-2" outlined label auto-grow>正文</v-chip>
             <v-textarea solo no-resize clearable height="300" 
                 label="输入帖子内容……（支持Markdown语法）" v-model="content"
-                :rules="contentrules" counter maxlength="3000" hint="最多1000个字符">
+                :rules="contentrules" counter maxlength="3000" hint="最多3000个字符">
             </v-textarea>
             <v-row align="center">
                 <v-spacer></v-spacer>
@@ -60,6 +60,15 @@ export default {
         //         name: "index"
         //     })
         // }
+        this.thispost = this.$route.params.thepost
+        if (this.thispost != undefined) {
+            this.isedit = true
+            this.title = this.thispost.title
+            this.content = this.thispost.content
+            this.newpostid = this.thispost.id
+            console.log("Edit post")
+        }
+        this.$jwt = JSON.parse(localStorage.getItem('jwt')).jwt
     },
     data() {
         return {
@@ -69,7 +78,8 @@ export default {
             "emptydialog": false,
             "newpostid": 0,
             "titlerules": [v => v.length <= 50 || 'Max 25 characters'],
-            "contentrules": [v => v.length <= 3000 || 'Max 1000 characters'],
+            "contentrules": [v => (v.length <= 3000 && v.length > 0) || 'Max 1000 characters'],
+            "isedit": false
         }
     },
     methods: {
@@ -79,9 +89,15 @@ export default {
                 this.emptydialog = true
             }
             else {
+                let posturl = `http://simplebbs.iterator-traits.com/api/v1/post`
+                let postmethod = "post"
+                if (this.isedit === true){
+                    posturl = `http://simplebbs.iterator-traits.com/api/v1/post/${this.newpostid}`
+                    postmethod = "put"
+                }
                 this.$axios({
-                    method: "post",
-                    url: "http://simplebbs.iterator-traits.com/api/v1/post",
+                    method: postmethod,
+                    url: posturl,
                     headers: {
                         "Authorization": this.$jwt
                     },
@@ -90,8 +106,8 @@ export default {
                         "content": this.content
                     })
                 }).then(response => {
-                    if (response.data.message === "ok") {
-                        this.releasedialog = true
+                    this.releasedialog = true
+                    if (!this.isedit) {
                         this.newpostid = response.data.postId
                     }
                 }).catch(error => console.log(error))
@@ -100,6 +116,22 @@ export default {
         },
         gotopost() {
             this.releasedialog = false
+            let newpost = null
+            this.$axios({
+                method: "get",
+                url: `http://simplebbs.iterator-traits.com/api/v1/post/${this.newpostid}`,
+                headers: {
+                    "Authorization": this.$jwt
+                },
+            }).then(response => {
+                newpost = response.data
+                this.$router.push({
+                    name: "comment",
+                    params: {
+                        "thepost": newpost
+                    }
+                })
+            }).catch(error => console.log(error))
         }
     }
 }

@@ -55,13 +55,15 @@
   export default {
     created() {
       Vue.prototype.$logged = false
-      let storage = JSON.parse(localStorage.getItem('localstorage'))
-      if (storage != null) {
-        console.log("LocalStorage: ", storage)
-        Vue.prototype.$jwt = storage.jwt
+      let jwtStorage = JSON.parse(localStorage.getItem('jwt'))
+      if (jwtStorage != null) {
+        console.log("LocalStorage: ", jwtStorage)
+        Vue.prototype.$jwt = jwtStorage.jwt
         this.loginsucceed()
       }
-      console.log("LocalStorage clean")
+      else{
+        console.log("LocalStorage clean")
+      }
     },
     components: {
       navbar
@@ -95,7 +97,7 @@
 
             localStorage.clear();
             if (this.autologin === true) {
-              localStorage.setItem("localstorage", JSON.stringify({
+              localStorage.setItem("jwt", JSON.stringify({
                 "jwt": this.$jwt,
               }));
             }

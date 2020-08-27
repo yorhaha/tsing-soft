@@ -37,10 +37,16 @@
             <v-container v-for="(post, index) in allposts" :key="index">
               <v-card color="white">
                 <v-card-title class="headline">{{ post.title }}</v-card-title>
-                <v-card-subtitle>{{ post.nickname }}</v-card-subtitle>
+                <v-card-subtitle>
+                  <span class="mr-3" link>{{post.nickname}}</span>
+                  <span class="mr-3">{{formatDate(post.created)}}</span>
+                  <span class="mr-3" v-show="post.created != post.updated">已编辑</span>
+                </v-card-subtitle>
                 <v-card-actions>
                   <v-spacer></v-spacer>
-                  <v-btn @click="changeshow(post, index)">more</v-btn>
+                  <v-btn v-show="post.mypost" @click="editpost(post)">编辑</v-btn>
+                  <v-btn @click="commentpost(post)">评论</v-btn>
+                  <v-btn @click="changeshow(post, index)">阅读</v-btn>
                 </v-card-actions>
                 <v-expand-transition>
                   <div v-show="post.showcontent">
@@ -78,6 +84,7 @@
 import navbar from "./navbar.vue"
 import Vue from 'vue'
 import VueMarkdown from 'vue-markdown'
+import { formatDate } from '../common'
 export default {
     components: {
         navbar,
@@ -85,16 +92,46 @@ export default {
     },
     created() {
         console.log("posts page")
-        if (this.$logged === false || this.$logged === undefined) {
-          this.$router.push({
-            name: "index"
-          })
-        }
-
-        for (let i = 0; i < this.$postlist.length; i++) {
-          this.$set(this.$postlist[i], "showcontent", false)
-        }
         this.allposts = this.$postlist
+        this.$jwt = JSON.parse(localStorage.getItem('jwt')).jwt
+        if (this.allposts === undefined) {
+          let postStorage = JSON.parse(localStorage.getItem('postlist'))
+            if (postStorage != null) {
+                this.allposts = postStorage.postlist
+                this.$userinfo = JSON.parse(localStorage.getItem('userinfo')).userinfo
+                console.log("Read local storage succeed")
+            }
+            else {
+                this.$router.push({
+                    name: "index"
+                })
+            }
+        }
+        else {
+          for (let i = 0; i < this.allposts.length; i++) {
+            this.$set(this.allposts[i], "showcontent", false)
+            this.$set(this.allposts[i], "mypost", (this.allposts[i].userId === this.$userinfo.id))
+          }
+          localStorage.setItem("postlist", JSON.stringify({
+              "postlist": this.allposts,
+          }));
+          localStorage.setItem("userinfo", JSON.stringify({
+              "userinfo": this.$userinfo,
+          }));
+          console.log("create storage")
+          console.log("this.jwt: ", this.$jwt)
+        }
+        
+        if (this.$jwt === undefined) {
+          this.$logged = false
+          console.log("logged === false")
+          // this.$router.push({
+          //   name: "index"
+          // })
+        }
+        else {
+          this.$logged = true
+        }
     },
     data() {
         return {
@@ -106,11 +143,11 @@ export default {
         }
     },
     methods: {
+      formatDate,
       changeshow(thepost, postindex) {
         Vue.set(this.allposts[postindex], "showcontent", !(thepost.showcontent))
       },
       gotowrite() {
-        console.log("gotowrite")
         this.$router.push({
           name: "write"
         })
@@ -132,6 +169,7 @@ export default {
         this.getnewposts(1, this.$userinfo.id, false)
       },
       getnewposts(newpage=1, newuserid=0, more=false) {
+        console.log("New action")
         this.$axios({
                 method: "get",
                 url: "http://simplebbs.iterator-traits.com/api/v1/post",
@@ -145,6 +183,10 @@ export default {
                   "orderByReply": this.orderByReply
                 }
             }).then(response => {
+              let newposts = response.data.posts
+              for (let i = 0; i < newposts.length; i++) {
+                newposts[i].mypost = (newposts[i].userId === this.$userinfo.id)
+              }
               if (more === true) {
                 this.allposts = this.allposts.concat(response.data.posts)
               }
@@ -152,8 +194,24 @@ export default {
                 this.page = 1
                 this.allposts = response.data.posts
               }
-              
+              console.log(this.allposts)
             }).catch(error => console.log(error))
+      },
+      commentpost(thepost) {
+        this.$router.push({
+            name: "comment",
+            params: {
+                "thepost": thepost
+            }
+        })
+      },
+      editpost(thepost) {
+        this.$router.push({
+          name: "write", 
+          params: {
+              "thepost": thepost
+          }
+        })
       }
     }
 }

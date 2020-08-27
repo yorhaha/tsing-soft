@@ -73,7 +73,6 @@
 <script>
 import navbar from "./navbar.vue"
 import VueMarkdown from 'vue-markdown'
-import { formatDate } from '../common'
 // import Vue from 'vue'
 export default {
     components: {
@@ -129,7 +128,6 @@ export default {
         }
     },
     methods: {
-        formatDate,
         submitreply() {
             this.replydialog = false
             console.log("Reply target: ", this.replytarget)

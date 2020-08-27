@@ -55,11 +55,6 @@ export default {
         navbar
     },
     created() {
-        // if (this.$logged === false || this.$logged === undefined) {
-        //     this.$router.push({
-        //         name: "index"
-        //     })
-        // }
         this.thispost = this.$route.params.thepost
         if (this.thispost != undefined) {
             this.isedit = true

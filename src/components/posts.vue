@@ -4,11 +4,11 @@
         <v-card class="pa-md-4 mx-lg-auto" max-width="344" outlined>
             <v-list-item three-line>
               <v-list-item-content>
-                  <v-list-item-title class="headline mb-1">{{ this.$userinfo.nickname }}</v-list-item-title>
+                  <v-list-item-title class="headline mb-1">{{ this.userinfo.nickname }}</v-list-item-title>
                   <v-divider class="my-3"></v-divider>
-                  <v-list-item-subtitle class="my-1">ID：{{ this.$userinfo.id }}</v-list-item-subtitle>
-                  <v-list-item-subtitle class="my-1">用户名：{{ this.$userinfo.username }}</v-list-item-subtitle>
-                  <v-list-item-subtitle class="my-1">创建时间：{{ this.$userinfo.created.substr(0, 10) }}</v-list-item-subtitle>
+                  <v-list-item-subtitle class="my-1">ID：{{ this.userinfo.id }}</v-list-item-subtitle>
+                  <v-list-item-subtitle class="my-1">用户名：{{ this.userinfo.username }}</v-list-item-subtitle>
+                  <v-list-item-subtitle class="my-1">创建时间：{{ this.userinfo.created.substr(0, 10) }}</v-list-item-subtitle>
               </v-list-item-content>
             </v-list-item>
         </v-card>
@@ -24,6 +24,12 @@
           <v-list-item link @click="getmyposts">
             <v-list-item-action><v-icon>mdi-note-multiple</v-icon></v-list-item-action>
             <v-list-item-content><v-list-item-title>我的帖子</v-list-item-title></v-list-item-content>
+          </v-list-item>
+        </v-card>
+        <v-card class="pa-md-4 mx-lg-auto" max-width="344" outlined>
+          <v-list-item link @click.stop="showexitdialog">
+            <v-list-item-action><v-icon>mdi-logout-variant</v-icon></v-list-item-action>
+            <v-list-item-content><v-list-item-title>退出登录</v-list-item-title></v-list-item-content>
           </v-list-item>
         </v-card>
         
@@ -78,9 +84,27 @@
         </v-row>
       </v-container>
 
-      <v-snackbar v-model="this.$route.params.autologinsucceed">
+      <v-snackbar v-model="this.autologinsucceed">
         自动登录成功
       </v-snackbar>
+
+      <v-dialog v-model="this.exitdialog" max-width="290">
+        <v-card>
+          <v-card-title class="headline">确认退出账号？</v-card-title>
+          <v-card-text>
+            将删去保存的登录状态
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="primary darken-1" text @click="logout">
+              确认
+            </v-btn>
+            <v-btn color="primary darken-1" text @click="exitdialog = false">
+              取消
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
     </v-main>
   </v-app>
@@ -90,7 +114,6 @@
 import navbar from "./navbar.vue"
 import Vue from 'vue'
 import VueMarkdown from 'vue-markdown'
-import { formatDate } from '../common'
 export default {
     components: {
         navbar,
@@ -98,56 +121,36 @@ export default {
     },
     created() {
         console.log("posts page")
-        this.allposts = this.$postlist
-        this.$jwt = JSON.parse(localStorage.getItem('jwt')).jwt
-        if (this.allposts === undefined) {
-          let postStorage = JSON.parse(localStorage.getItem('postlist'))
-            if (postStorage != null) {
-                this.allposts = postStorage.postlist
-                this.$userinfo = JSON.parse(localStorage.getItem('userinfo')).userinfo
-                console.log("Read local storage succeed")
-            }
-            else {
-                this.$router.push({
-                    name: "index"
-                })
-            }
-        }
-        else {
-          for (let i = 0; i < this.allposts.length; i++) {
-            this.$set(this.allposts[i], "showcontent", false)
-            this.$set(this.allposts[i], "mypost", (this.allposts[i].userId === this.$userinfo.id))
-          }
-          localStorage.setItem("postlist", JSON.stringify({
-              "postlist": this.allposts,
-          }));
-          localStorage.setItem("userinfo", JSON.stringify({
-              "userinfo": this.$userinfo,
-          }));
-          console.log("create storage")
-          console.log("this.jwt: ", this.$jwt)
-        }
-        
+        this.$jwt = this.db.get("jwt")
         if (this.$jwt === undefined) {
-          this.$logged = false
-          console.log("logged === false")
+          this.$router.push({
+            name: "index"
+          })
         }
-        else {
-          this.$logged = true
+        this.userinfo = this.db.get("userinfo")
+        this.allposts = this.db.get("postlist")
+        this.autologinsucceed = this.$route.params.autologinsucceed
+        if (this.allposts[0].mypost === undefined) {
+          for (let i = 0; i < this.allposts.length; i++) {
+            this.$set(this.allposts[i], "mypost", (this.allposts[i].userId === this.userinfo.id))
+          }
+          this.db.save("postlist", this.allposts)
         }
     },
     data() {
         return {
+          userinfo: {},
           drawer: null,
           allposts: [],
           page: 1,
           orderByReply: false,
           customuserid: 0,
-          customearea: "广场"
+          customearea: "广场",
+          autologinsucceed: false,
+          exitdialog: false,
         }
     },
     methods: {
-      formatDate,
       changeshow(thepost, postindex) {
         Vue.set(this.allposts[postindex], "showcontent", !(thepost.showcontent))
       },
@@ -172,11 +175,10 @@ export default {
       },
       getmyposts() {
         this.customearea = "我"
-        this.customuserid = this.$userinfo.id
-        this.getnewposts(1, this.$userinfo.id, false)
+        this.customuserid = this.userinfo.id
+        this.getnewposts(1, this.userinfo.id, false)
       },
       getnewposts(newpage=1, newuserid=0, more=false) {
-        console.log("New action")
         this.$axios({
                 method: "get",
                 url: "http://simplebbs.iterator-traits.com/api/v1/post",
@@ -192,7 +194,7 @@ export default {
             }).then(response => {
               let newposts = response.data.posts
               for (let i = 0; i < newposts.length; i++) {
-                newposts[i].mypost = (newposts[i].userId === this.$userinfo.id)
+                newposts[i].mypost = (newposts[i].userId === this.userinfo.id)
               }
               if (more === true) {
                 this.allposts = this.allposts.concat(response.data.posts)
@@ -201,7 +203,6 @@ export default {
                 this.page = 1
                 this.allposts = response.data.posts
               }
-              console.log(this.allposts)
             }).catch(error => console.log(error))
       },
       commentpost(thepost) {
@@ -219,7 +220,17 @@ export default {
               "thepost": thepost
           }
         })
-      }
+      },
+      showexitdialog() {
+        this.exitdialog = true
+      },
+      logout() {
+        this.exitdialog = false
+        this.db.clear()
+        this.$router.push({
+          name: "index"
+        })
+      },
     }
 }
 </script>

@@ -55,16 +55,13 @@
   import Vue from 'vue'
   export default {
     beforeMount() {
-      Vue.prototype.$logged = false
-      let jwtStorage = JSON.parse(localStorage.getItem('jwt'))
-      if (jwtStorage != null) {
-        console.log("LocalStorage: ", jwtStorage)
-        Vue.prototype.$jwt = jwtStorage.jwt
+      Vue.prototype.$jwt = this.db.get("jwt")
+      if (this.$jwt != null) {
         this.autologinsucceed = true
         this.loginsucceed()
       }
-      else{
-        console.log("LocalStorage clean")
+      else {
+        this.db.clear()
       }
     },
     components: {
@@ -98,11 +95,9 @@
             Vue.prototype.$jwt = this.submitResult.jwt
             this.wrongPassword = false
 
-            localStorage.clear();
+            this.db.clear()
             if (this.autologin === true) {
-              localStorage.setItem("jwt", JSON.stringify({
-                "jwt": this.$jwt,
-              }));
+              this.db.save("jwt", this.$jwt)
             }
 
             console.log("Login succeed!")
@@ -115,7 +110,6 @@
         }).catch(error => console.log(error))
       },
       loginsucceed() {
-        Vue.prototype.$logged = true
         // Get user info for 'posts.vue'
         this.$axios({
             method: "get",
@@ -124,9 +118,7 @@
                 "Authorization": this.$jwt
             }
         }).then(response => {
-            console.log(response)
-            Vue.prototype.$userinfo = response.data
-            console.log("Get user info")
+            this.db.save("userinfo", response.data)
 
             // Get posts for 'posts.vue'
             this.$axios({
@@ -142,7 +134,8 @@
                   "orderByReply": false
                 }
             }).then(response => {
-                Vue.prototype.$postlist = response.data.posts
+                // Vue.prototype.$postlist = response.data.posts
+                this.db.save("postlist", response.data.posts)
                 
                 console.log("Get posts")
 

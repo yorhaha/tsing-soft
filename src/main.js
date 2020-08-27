@@ -7,8 +7,13 @@ import router from './router.js'
 import navbar from './components/navbar.vue'
 import 'github-markdown-css/github-markdown.css'
 
+import db from "./utils/localstorage"
+import { formatDate } from './utils/common'
+
 Vue.config.productionTip = false
 Vue.prototype.$axios = axios
+Vue.prototype.db = db
+Vue.prototype.formatDate = formatDate
 
 Vue.use(navbar)
 

@@ -18,6 +18,9 @@
                 </div>
                 <v-row>
                     <v-spacer></v-spacer>
+                    <v-btn class="mx-2" @click="collect">
+                        <span v-show="iscollected">取消</span>收藏
+                    </v-btn>
                     <v-btn class="mx-2" @click="onlyseeposter">只看楼主</v-btn>
                     <v-btn class="mx-2" @click="replydialog = true">评论</v-btn>
                 </v-row>
@@ -32,8 +35,7 @@
                     <v-row class="mb-1 px-4" justify="center" align="center">
                         <a class="mr-4 text-decoration-none">{{ reply.nickname }}</a>
                         <span class="mr-4">回复</span>
-                        <a v-if="reply.replyId == 0" class="mr-4 text-decoration-none">{{ thispost.nickname }}</a>
-                        <a v-else class="mr-4 text-decoration-none">{{ getreplytarget(reply) }}</a>
+                        <a class="mr-4 text-decoration-none">{{ reply.replyname }}</a>
                         <div class="text-caption grey--text">{{ formatDate(reply.created) }}</div>
                         <v-spacer></v-spacer>
                         <div class="text-caption">{{index + 1}}楼</div>
@@ -81,26 +83,23 @@ export default {
     },
     created() {
         console.log("comment page")
-        this.thispost = this.$route.params.thepost
-        // Read LocalStorage
-        if (this.thispost === undefined) {
-            let postStorage = JSON.parse(localStorage.getItem('thispost'))
-            if (postStorage != null) {
-                this.thispost = postStorage.thispost
-            }
-            else {
-                this.$router.push({
-                    name: "index"
-                })
-            }
-            this.$jwt = JSON.parse(localStorage.getItem('jwt')).jwt
+        this.thispost = this.db.get("thispost")
+        this.$jwt = this.db.get("jwt")
+        if (this.thispost === null) {
+            this.$router.push({
+                name: "index"
+            })
         }
-        else {
-            localStorage.setItem("thispost", JSON.stringify({
-                "thispost": this.thispost,
-            }));
+        let customcollect = this.db.get("collectposts")
+        if (customcollect != null) {
+            for (let i = 0; i < customcollect.length; i++) {
+                if (customcollect[i].id === this.thispost.id) {
+                    this.iscollected = true
+                    this.collectlocation = i
+                    break
+                }
+            }
         }
-        console.log("this.$jwt: ", this.$jwt)
 
         //Get post detail
         this.$axios({
@@ -112,11 +111,25 @@ export default {
         }).then(response => {
             this.postdetail = response.data
             this.allreply = this.postdetail.reply
+            for (let i = 0; i < this.allreply.length; i++) {
+                let thisreply = this.allreply[i]
+                if (thisreply.replyId == 0) {
+                    thisreply.replyname = this.postdetail.nickname
+                }
+                else {
+                    for (let j = 0; j < this.allreply.length; j++) {
+                        if (thisreply.replyId === this.allreply[j].id) {
+                            thisreply.replyname = this.allreply[j].nickname
+                            break
+                        }
+                    }
+                }
+            }
         })
     },
     data() {
         return {
-            thispost: this.$route.params.thepost,
+            thispost: {},
             postdetail: {},
             replydialog: false,
             replycontent: "",
@@ -124,7 +137,9 @@ export default {
             allreply: [],
             onlyposter: false,
             replytarget: 0,
-            replytargetname: "楼主"
+            replytargetname: "楼主",
+            iscollected: false,
+            collectlocation: -1
         }
     },
     methods: {
@@ -149,15 +164,6 @@ export default {
                 }
             })
         },
-        getreplytarget(reply) {
-            let replyid = reply.replyId
-            for (let i = 0; i < this.allreply.length; i++) {
-                if (this.allreply[i].id === replyid) {
-                    return this.allreply[i].nickname
-                }
-            }
-            return "Wrong!"
-        },
         onlyseeposter() {
             if (this.onlyposter === false){
                 this.allreply = []
@@ -177,6 +183,21 @@ export default {
             this.replytarget = targetreply.id
             this.replytargetname = targetreply.nickname
             this.replydialog = true
+        },
+        collect() {
+            let customcollect = this.db.get("collectposts")
+            if (this.iscollected) {
+                customcollect.splice(this.collectlocation, 1)
+                this.iscollected = false
+            }
+            else {
+                if(customcollect === null) {
+                    customcollect = []
+                }
+                customcollect.push(this.thispost)
+                this.iscollected = true
+            }
+            this.db.save("collectposts", customcollect)
         }
     }
 }

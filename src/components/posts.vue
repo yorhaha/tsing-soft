@@ -25,6 +25,14 @@
             <v-list-item-action><v-icon>mdi-note-multiple</v-icon></v-list-item-action>
             <v-list-item-content><v-list-item-title>我的帖子</v-list-item-title></v-list-item-content>
           </v-list-item>
+          <v-list-item link @click="getcollect">
+            <v-list-item-action><v-icon>mdi-star</v-icon></v-list-item-action>
+            <v-list-item-content><v-list-item-title>我的收藏</v-list-item-title></v-list-item-content>
+          </v-list-item>
+          <v-list-item link @click="gethistory">
+            <v-list-item-action><v-icon>mdi-history</v-icon></v-list-item-action>
+            <v-list-item-content><v-list-item-title>浏览历史</v-list-item-title></v-list-item-content>
+          </v-list-item>
         </v-card>
         <v-card class="pa-md-4 mx-lg-auto" max-width="344" outlined>
           <v-list-item link @click.stop="showexitdialog">
@@ -40,7 +48,17 @@
       <v-container class="fill-height">
         <v-row>
           <v-col class="grow">
-            <span class="mx-3 text-h6">{{ this.customearea }}的帖子</span>
+            <v-row class="mx-3">
+              <span class="text-h6">{{ this.customearea }}的帖子</span>
+              <v-spacer v-show="customuserid >= 0"></v-spacer>
+              <v-btn v-show="customuserid >= 0" @click="changeorder">
+                按
+                <span v-if="orderByReply === false">发帖时间</span>
+                <span v-else>回复时间</span>
+                排序
+              </v-btn>
+            </v-row>
+            
             <v-container v-for="(post, index) in allposts" :key="index">
               <v-card color="white">
                 <v-card-title class="headline">{{ post.title }}</v-card-title>
@@ -71,9 +89,12 @@
             </v-container>
 
             <v-container>
+              <v-card color="white" v-if="this.allposts.length === 0" class="my-5">
+                <v-card-title class="headline"><span class="mx-auto">（空）</span></v-card-title>
+              </v-card>
               <v-row justify="center" align="center">
                 <v-spacer></v-spacer>
-                  <v-btn @click="getmoreposts">
+                  <v-btn @click="getmoreposts" v-if="(this.allposts.length != 0) && (this.customuserid >= 0)">
                       查看更多
                   </v-btn>
                 <v-spacer></v-spacer>
@@ -88,11 +109,11 @@
         自动登录成功
       </v-snackbar>
 
-      <v-dialog v-model="this.exitdialog" max-width="290">
+      <v-dialog v-model="this.exitdialog" max-width="350">
         <v-card>
           <v-card-title class="headline">确认退出账号？</v-card-title>
           <v-card-text>
-            将删去保存的登录状态
+            将清除本地的登录状态、收藏、历史等数据！
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -127,6 +148,14 @@ export default {
             name: "index"
           })
         }
+        this.customearea = this.db.get("customearea")
+        if (this.customearea === null) {
+          this.customearea = "广场"
+        }
+        this.orderByReply = this.db.get("postorder")
+        if (this.orderByReply === null) {
+          this.orderByReply = false
+        }
         this.userinfo = this.db.get("userinfo")
         this.allposts = this.db.get("postlist")
         this.autologinsucceed = this.$route.params.autologinsucceed
@@ -136,6 +165,11 @@ export default {
           }
           this.db.save("postlist", this.allposts)
         }
+    },
+    beforeDestroy() {
+      this.db.save("postlist", this.allposts)
+      this.db.save("customearea", this.customearea)
+      this.db.save("postorder", this.orderByReply)
     },
     data() {
         return {
@@ -205,12 +239,26 @@ export default {
               }
             }).catch(error => console.log(error))
       },
-      commentpost(thepost) {
+      changeorder() {
+        this.orderByReply = !(this.orderByReply)
+        this.getnewposts(1, this.customuserid)
+      },
+      commentpost(thispost) {
+        this.db.save("thispost", thispost)
+        let customhistory = this.db.get("historyposts")
+        if (customhistory === null) {
+          customhistory = []
+        }
+        for (let i = 0; i < customhistory.length; i++) {
+          if (thispost.id === customhistory[i].id) {
+            customhistory.splice(i, 1)
+            break
+          }
+        }
+        customhistory.push(thispost)
+        this.db.save("historyposts", customhistory)
         this.$router.push({
-            name: "comment",
-            params: {
-                "thepost": thepost
-            }
+            name: "comment"
         })
       },
       editpost(thepost) {
@@ -231,6 +279,28 @@ export default {
           name: "index"
         })
       },
+      getcollect() {
+        this.customearea = "收藏"
+        this.allposts = this.db.get("collectposts")
+        if (this.allposts === null) {
+          this.allposts = []
+        }
+        else {
+          this.allposts = this.allposts.reverse()
+        }
+        this.customuserid = -1
+      },
+      gethistory() {
+        this.customearea = "看过"
+        this.allposts = this.db.get("historyposts")
+        if (this.allposts === null) {
+          this.allposts = []
+        }
+        else {
+          this.allposts = this.allposts.reverse()
+        }
+        this.customuserid = -1
+      }
     }
 }
 </script>

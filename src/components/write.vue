@@ -63,7 +63,7 @@ export default {
             this.newpostid = this.thispost.id
             console.log("Edit post")
         }
-        this.$jwt = JSON.parse(localStorage.getItem('jwt')).jwt
+        this.$jwt = this.db.get("jwt")
     },
     data() {
         return {

@@ -84,7 +84,7 @@ export default {
     created() {
         this.thispost = this.db.get("thispost")
         this.$jwt = this.db.get("jwt")
-        // console.log(`comment post ${this.thispost.id}`)
+        console.log(`comment post ${this.thispost.id}`)
         if (this.thispost === null) {
             this.$router.push({
                 name: "index"
@@ -134,9 +134,19 @@ export default {
                 // console.log(imgs[i].style)
                 imgs[i].style.maxWidth = "300px"
                 imgs[i].style.maxHeight = "300px"
+                imgs[i]._bigged = false
                 imgs[i].addEventListener('click', function(){
+                    if (imgs[i]._bigged === true) {
+                    imgs[i]._bigged = false
+                    imgs[i].style.maxWidth = "300px"
+                    imgs[i].style.maxHeight = "300px"
+                    }
+                    else {
+                    imgs[i]._bigged = true
                     imgs[i].style.maxWidth = "100%"
                     imgs[i].style.maxHeight = "100%"
+                    }
+                    // console.log("Click")
                 })
             }
             // console.log("Find imgs ", imgs.length)

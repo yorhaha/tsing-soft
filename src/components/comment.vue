@@ -14,7 +14,7 @@
 
             <v-card-text>
                 <div class="markdown-body mx-3">
-                    <VueMarkdown :source="thispost.content"></VueMarkdown>
+                    <VueMarkdown ref="markdowncontent" :source="thispost.content"></VueMarkdown>
                 </div>
                 <v-row>
                     <v-spacer></v-spacer>
@@ -82,9 +82,9 @@ export default {
         VueMarkdown
     },
     created() {
-        console.log("comment page")
         this.thispost = this.db.get("thispost")
         this.$jwt = this.db.get("jwt")
+        // console.log(`comment post ${this.thispost.id}`)
         if (this.thispost === null) {
             this.$router.push({
                 name: "index"
@@ -127,6 +127,22 @@ export default {
             }
         })
     },
+    mounted() {
+        setTimeout(() => {
+            let imgs = document.querySelectorAll(".markdown-body img")
+            for (let i = 0; i < imgs.length; i++) {
+                // console.log(imgs[i].style)
+                imgs[i].style.maxWidth = "300px"
+                imgs[i].style.maxHeight = "300px"
+                imgs[i].addEventListener('click', function(){
+                    imgs[i].style.maxWidth = "100%"
+                    imgs[i].style.maxHeight = "100%"
+                })
+            }
+            // console.log("Find imgs ", imgs.length)
+        }, 300)
+        
+    },
     data() {
         return {
             thispost: {},
@@ -145,7 +161,7 @@ export default {
     methods: {
         submitreply() {
             this.replydialog = false
-            console.log("Reply target: ", this.replytarget)
+            // console.log("Reply target: ", this.replytarget)
             this.$axios({
                 method: "post", 
                 url: `http://simplebbs.iterator-traits.com/api/v1/post/${this.thispost.id}/reply`,
@@ -198,6 +214,9 @@ export default {
                 this.iscollected = true
             }
             this.db.save("collectposts", customcollect)
+        },
+        seebigimg() {
+
         }
     }
 }

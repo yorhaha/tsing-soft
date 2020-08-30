@@ -61,7 +61,6 @@ export default {
             this.title = this.thispost.title
             this.content = this.thispost.content
             this.newpostid = this.thispost.id
-            console.log("Edit post")
         }
         this.$jwt = this.db.get("jwt")
     },
@@ -72,14 +71,14 @@ export default {
             "releasedialog": false,
             "emptydialog": false,
             "newpostid": 0,
-            "titlerules": [v => v.length <= 50 || 'Max 25 characters'],
-            "contentrules": [v => (v.length <= 3000 && v.length > 0) || 'Max 1000 characters'],
+            "titlerules": [v => v.length <= 50 || '最多50个字符'],
+            "contentrules": [v => (v.length <= 3000) || '最多3000个字符'],
             "isedit": false
         }
     },
     methods: {
         releasepost() {
-            console.log("release post")
+            // console.log("release post")
             if (this.title === "" || this.content === "") {
                 this.emptydialog = true
             }
@@ -102,16 +101,18 @@ export default {
                     })
                 }).then(response => {
                     this.releasedialog = true
-                    if (!this.isedit) {
+                    if (this.isedit === false) {
                         this.newpostid = response.data.postId
+                        // console.log(`release new post ${this.newpostid}`)
                     }
                 }).catch(error => console.log(error))
-                console.log("release success")
+                // console.log("release success")
             }
         },
         gotopost() {
             this.releasedialog = false
             let newpost = null
+            // console.log(`go to post ${this.newpostid}`)
             this.$axios({
                 method: "get",
                 url: `http://simplebbs.iterator-traits.com/api/v1/post/${this.newpostid}`,
@@ -120,11 +121,9 @@ export default {
                 },
             }).then(response => {
                 newpost = response.data
+                this.db.save("thispost", newpost)
                 this.$router.push({
-                    name: "comment",
-                    params: {
-                        "thepost": newpost
-                    }
+                    name: "comment"
                 })
             }).catch(error => console.log(error))
         }

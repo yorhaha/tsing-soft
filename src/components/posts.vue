@@ -97,6 +97,9 @@
                   <v-btn @click="getmoreposts" v-if="(this.allposts.length != 0) && (this.customuserid >= 0)">
                       查看更多
                   </v-btn>
+                  <v-btn @click="cleanhistory" v-if="(this.customearea === '看过')">
+                      清除历史
+                  </v-btn>
                 <v-spacer></v-spacer>
               </v-row>
             </v-container>
@@ -141,20 +144,19 @@ export default {
         VueMarkdown
     },
     created() {
-        console.log("posts page")
+        // console.log("posts page")
         this.$jwt = this.db.get("jwt")
         if (this.$jwt === undefined) {
           this.$router.push({
             name: "index"
           })
         }
-        this.customearea = this.db.get("customearea")
-        if (this.customearea === null) {
-          this.customearea = "广场"
-        }
-        this.orderByReply = this.db.get("postorder")
-        if (this.orderByReply === null) {
-          this.orderByReply = false
+        let sourceList = ["customearea", "postorder", "page", "customuserid"]
+        for (let i = 0; i < sourceList.length; i++) {
+          let tmp = this.db.get(sourceList[i])
+          if (tmp != null) {
+            this[sourceList[i]] = tmp
+          }
         }
         this.userinfo = this.db.get("userinfo")
         this.allposts = this.db.get("postlist")
@@ -170,6 +172,8 @@ export default {
       this.db.save("postlist", this.allposts)
       this.db.save("customearea", this.customearea)
       this.db.save("postorder", this.orderByReply)
+      this.db.save("page", this.page)
+      this.db.save("customuserid", this.customuserid)
     },
     data() {
         return {
@@ -183,6 +187,31 @@ export default {
           autologinsucceed: false,
           exitdialog: false,
         }
+    },
+    mounted() {
+      setTimeout(() => {
+          let imgs = document.querySelectorAll(".markdown-body img")
+          for (let i = 0; i < imgs.length; i++) {
+              // console.log(imgs[i].style)
+              imgs[i].style.maxWidth = "300px"
+              imgs[i].style.maxHeight = "300px"
+              imgs[i]._bigged = false
+              imgs[i].addEventListener('click', function(){
+                if (imgs[i]._bigged === true) {
+                  imgs[i]._bigged = false
+                  imgs[i].style.maxWidth = "300px"
+                  imgs[i].style.maxHeight = "300px"
+                }
+                else {
+                  imgs[i]._bigged = true
+                  imgs[i].style.maxWidth = "100%"
+                  imgs[i].style.maxHeight = "100%"
+                }
+                // console.log("Click")
+              })
+          }
+          // console.log("Find imgs ", imgs.length)
+      }, 300)
     },
     methods: {
       changeshow(thepost, postindex) {
@@ -300,6 +329,10 @@ export default {
           this.allposts = this.allposts.reverse()
         }
         this.customuserid = -1
+      },
+      cleanhistory() {
+        this.allposts = []
+        this.db.remove("historyposts")
       }
     }
 }

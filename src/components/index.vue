@@ -56,12 +56,20 @@
   export default {
     beforeMount() {
       Vue.prototype.$jwt = this.db.get("jwt")
+      this.db.clear()
       if (this.$jwt != null) {
-        this.autologinsucceed = true
-        this.loginsucceed()
-      }
-      else {
-        this.db.clear()
+        this.$axios({
+            method: "get",
+            url: "http://simplebbs.iterator-traits.com/api/v1/hello-user",
+            headers: {
+                "Authorization": this.$jwt
+            }
+        }).then(response => {
+          if (response.status === 200) {
+            this.autologinsucceed = true
+            this.loginsucceed()
+          }
+        })
       }
     },
     components: {
@@ -100,17 +108,18 @@
               this.db.save("jwt", this.$jwt)
             }
 
-            console.log("Login succeed!")
+            // console.log("Login succeed!")
             this.loginsucceed()
           }
           else {
             this.wrongPassword = true
-            console.log("Login failed!", this.status)
+            // console.log("Login failed!", this.status)
           }
         }).catch(error => console.log(error))
       },
       loginsucceed() {
         // Get user info for 'posts.vue'
+        this.db.save("jwt", this.$jwt)
         this.$axios({
             method: "get",
             url: "http://simplebbs.iterator-traits.com/api/v1/user",
@@ -137,7 +146,7 @@
                 // Vue.prototype.$postlist = response.data.posts
                 this.db.save("postlist", response.data.posts)
                 
-                console.log("Get posts")
+                // console.log("Get posts")
 
                 this.$router.push({
                   name: "posts",
